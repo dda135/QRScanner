@@ -2,6 +2,7 @@ package indi.fanjh.qrscanlib.core;
 
 import android.app.Activity;
 import android.graphics.Rect;
+import android.hardware.Camera;
 import android.support.annotation.NonNull;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -30,9 +31,12 @@ public class CaptureActivityDelegate {
     private BeepManager beepManager;
     private SurfaceView scanPreview = null;
     private Rect mCropRect = null;
+    private Rect mPreviewRect = null;
     private boolean isHasSurface = false;
     private OnStatusListener onStatusListener;
     private boolean shouldScan;
+    private int previewWidth;
+    private int previewHeight;
 
     /**
      * 设置一些状态的监听
@@ -88,9 +92,15 @@ public class CaptureActivityDelegate {
      * 自定义裁剪区域，一般来说就是优化一下速度
      * 不过实际测试中会发现，效果并不明显，一般来说可以采用全屏的操作
      * @param rect 相对于surfaceView的区域
+     * @param previewRect surfaceView的区域
      */
-    public void setCropRect(Rect rect){
+    public void setCropRect(Rect rect,Rect previewRect){
         this.mCropRect = rect;
+        this.mPreviewRect = previewRect;
+        if(null != mPreviewRect){
+            previewHeight = mPreviewRect.height();
+            previewWidth = mPreviewRect.width();
+        }
     }
 
     public void onResume(boolean shouldScan){
@@ -169,6 +179,24 @@ public class CaptureActivityDelegate {
     }
 
     public Rect getCropRect() {
+        if(null == mPreviewRect){
+            return mCropRect;
+        }
+        Camera.Size size = cameraManager.getPreviewSize();
+        int width = size.width;
+        int height = size.height;
+
+        if(previewHeight != height || previewWidth != width) {
+            previewWidth = width;
+            previewHeight = height;
+
+            double widthRatio = width * 1.0 / mPreviewRect.width();
+            double heightRatio = height * 1.0 / mPreviewRect.height();
+            mCropRect.left = (int) (mCropRect.left * widthRatio);
+            mCropRect.right = (int) (mCropRect.right * widthRatio);
+            mCropRect.top = (int) (mCropRect.top * heightRatio);
+            mCropRect.bottom = (int) (mCropRect.bottom * heightRatio);
+        }
         return mCropRect;
     }
 
