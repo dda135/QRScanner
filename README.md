@@ -66,6 +66,28 @@ module基于zxing包装了一些基础操作，从而使得扫描二维码操作
         super.onDestroy();
     }
 ```
+指定扫描区域的实例
+```
+//等待视图绘制完成
+captureCropView.post(new Runnable() {
+            @Override
+            public void run() {
+                int []position = new int[2];
+                captureCropView.getLocationInWindow(position);
+                Rect rect = new Rect();
+                //注意水平坐标系翻转
+                rect.left = position[1];
+                rect.right = position[1] + captureCropView.getHeight();
+                rect.top = ScreenUtils.getScreenWidth() - (position[0] + captureCropView.getWidth());
+                rect.bottom = rect.top + captureCropView.getWidth();
+
+                Rect previewRect = new Rect();
+                previewRect.right = ScreenUtils.getScreenHeight();
+                previewRect.bottom = ScreenUtils.getScreenWidth();
+                delegate.setCropRect(rect,previewRect);
+            }
+        });
+```
 
 # 注意事项
 扫描和实际的UI交互是互不干涉的，核心的扫描只需要一个SurfaceView，其余UI需要自己额外实现，比方说扫描框、扫描线的动画等等
